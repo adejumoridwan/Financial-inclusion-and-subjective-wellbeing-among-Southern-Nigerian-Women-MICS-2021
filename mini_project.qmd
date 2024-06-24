@@ -1,0 +1,62 @@
+---
+title: "Financial Inclusion and Subjective Well Being"
+format: html
+---
+
+# Libraries
+```{r}
+library(tidyverse)
+library(haven)
+library(lavaan)
+```
+
+# Data Cleaning
+```{r}
+wm <- read_sav("wm.sav") |> 
+  filter(zone %in% c(4,5,6))
+```
+
+# SEM
+```{r}
+#structural equation model
+model <- '
+  #measurement model
+    awareness =~ FN1A + FN1B + FN1C + FN1D + FN1E + FN1F + FN1G + FN1H + FN1I + FN1J + FN1K + FN1L
+    usage =~ FN2 + FN4A + FN4C + FN4D + FN4E + FN4F + FN4G + FN4H + FN4X + FN4NR + FN5
+    FI =~ awareness + usage
+    SW =~ LS1 + LS2 + LS3 + LS4
+  #regressions
+    SW ~ FI
+  #SW ~ FI + welevel + insurance + zone + MA6 + HH6 
+    FN4C ~~ FN4NR
+    FN1H ~~ FN1I
+    FN1K ~~ FN1L
+    FN4H ~~ FN4X
+    FN4E ~~ FN4NR
+    FN4C ~~ FN4E
+    FN4D ~~ FN4E
+    FN4D ~~ FN4NR
+    FN1D ~~ FN1G
+    FN1J ~~ FN1L
+    FN4C ~~ FN4D
+    FN1J ~~ FN1K
+    LS1 ~~ LS2
+    LS2 ~~ LS3
+    FN1A ~~ FN1J
+    FN1A ~~ FN1B
+    FN1C ~~ FN1D
+    FN1D ~~ FN1I
+    FN1B ~~ FN1E
+    FN4F ~~ FN4G
+'
+fit <- sem(model, data = wm)
+summary(fit, standardized = TRUE)
+modindices(fit, sort = TRUE, maximum.number = 5)
+fitMeasures(fit, c("cfi","rmsea","srmr"))
+```
+```{r}
+library(semPlot)
+lavaanPlot(fit, what = "std", layout = "circle")
+
+```
+
