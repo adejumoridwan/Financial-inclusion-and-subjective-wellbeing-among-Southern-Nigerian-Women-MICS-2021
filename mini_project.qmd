@@ -5,58 +5,81 @@ format: html
 
 # Libraries
 ```{r}
-library(tidyverse)
-library(haven)
-library(lavaan)
+# Install pacman if it's not already installed
+if (!require("pacman")) {
+  install.packages("pacman", dependencies = TRUE)
+  library(pacman)
+}
+
+# Use pacman to load or install the required packages
+pacman::p_load(tidyverse, haven, lavaan, srvyr, lavaanPlot)
+
+
 ```
 
-# Data Cleaning
+# Load Data
 ```{r}
+# Load the women data
 wm <- read_sav("wm.sav") |> 
+  # filter only women in southern region
   filter(zone %in% c(4,5,6))
+
 ```
 
-# SEM
+# CFA
 ```{r}
-#structural equation model
+#confirmatory factor analysis
 model <- '
   #measurement model
     awareness =~ FN1A + FN1B + FN1C + FN1D + FN1E + FN1F + FN1G + FN1H + FN1I + FN1J + FN1K + FN1L
     usage =~ FN2 + FN4A + FN4C + FN4D + FN4E + FN4F + FN4G + FN4H + FN4X + FN4NR + FN5
     FI =~ awareness + usage
     SW =~ LS1 + LS2 + LS3 + LS4
-  #regressions
-    SW ~ FI
-  #SW ~ FI + welevel + insurance + zone + MA6 + HH6 
-    FN4C ~~ FN4NR
-    FN1H ~~ FN1I
-    FN1K ~~ FN1L
-    FN4H ~~ FN4X
-    FN4E ~~ FN4NR
-    FN4C ~~ FN4E
-    FN4D ~~ FN4E
-    FN4D ~~ FN4NR
-    FN1D ~~ FN1G
-    FN1J ~~ FN1L
-    FN4C ~~ FN4D
-    FN1J ~~ FN1K
-    LS1 ~~ LS2
-    LS2 ~~ LS3
-    FN1A ~~ FN1J
-    FN1A ~~ FN1B
-    FN1C ~~ FN1D
-    FN1D ~~ FN1I
-    FN1B ~~ FN1E
-    FN4F ~~ FN4G
 '
-fit <- sem(model, data = wm)
-summary(fit, standardized = TRUE)
+# cfa model
+fit <- sem(model, data = wm, cluster = "PSU",sampling.weights="wmweight")
+
+# check for modification indices, factor loadings less than 0.5 are dropped
 modindices(fit, sort = TRUE, maximum.number = 5)
-fitMeasures(fit, c("cfi","rmsea","srmr"))
+
+#summary measures
+summary(fit, standardized = TRUE, fit.measures=TRUE)
 ```
+
+
+# SEM
 ```{r}
-library(semPlot)
-lavaanPlot(fit, what = "std", layout = "circle")
+# Structural Equation Model
+model <- '
+  #measurement model
+    awareness =~ FN1B + FN1D + FN1E + FN1G + FN1H + FN1I
+    usage =~ FN2 + FN4H + welevel
+    FI =~ awareness + usage + FN1A
+    SW =~ LS1 + LS3
+  #regressions
+    FI ~ welevel
+    HH6 ~ welevel + FI + zone
+    SW ~ FI
+  #residual correlations
+    FN1H ~~ FN1I
+    FN1A ~~ FN1B
+    LS1 ~~ LS3
+'
+#sem model
+fit <- sem(model, data = wm, cluster = "PSU",sampling.weights="wmweight")
+
+# summary measures
+summary(fit, standardized = TRUE, fit.measures=TRUE)
+
+
+#fitMeasures(fit, c("cfi","rmsea","srmr"))
+
+```
+
+## SEM Plot
+```{r}
+# plot the SEM diagram
+lavaanPlot(model = fit, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = T)
 
 ```
 
