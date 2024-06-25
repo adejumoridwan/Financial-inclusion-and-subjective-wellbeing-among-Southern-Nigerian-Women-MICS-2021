@@ -15,6 +15,7 @@ if (!require("pacman")) {
 pacman::p_load(tidyverse, haven, lavaan, srvyr, lavaanPlot)
 
 
+
 ```
 
 # Load Data
@@ -25,6 +26,33 @@ wm <- read_sav("wm.sav") |>
   filter(zone %in% c(4,5,6))
 
 ```
+
+# Descriptive Statistics
+```{r}
+# two-stage stratified cluster sampling
+wm_survey_design <- wm |> 
+  as_survey_design(
+    c(HH1, HH2), weights=wmweight, strata=stratum
+  )
+
+# function to create summary measures by group
+sum_var <- function(g){
+  wm_survey_design |> 
+  group_by({{g}}) |> 
+  summarize(proportion = survey_mean()*100,
+            total = survey_total()) |> 
+    select({{g}}, proportion, total)
+}
+
+#summary statistics of socio_demographic variables
+sum_var(zone)
+sum_var(welevel)
+sum_var(WAGE)
+sum_var(HH6)
+sum_var(MA6)
+
+```
+
 
 # CFA
 ```{r}
@@ -37,7 +65,7 @@ model <- '
     SW =~ LS1 + LS2 + LS3 + LS4
 '
 # cfa model
-fit <- sem(model, data = wm, cluster = "PSU",sampling.weights="wmweight")
+fit <- sem(model, data = wm, cluster = "HH1",sampling.weights="wmweight")
 
 # check for modification indices, factor loadings less than 0.5 are dropped
 modindices(fit, sort = TRUE, maximum.number = 5)
@@ -57,7 +85,7 @@ model <- '
     FI =~ awareness + usage + FN1A
     SW =~ LS1 + LS3
   #regressions
-    FI ~ welevel
+    FI ~ welevel + WB4
     HH6 ~ welevel + FI + zone
     SW ~ FI
   #residual correlations
@@ -66,7 +94,7 @@ model <- '
     LS1 ~~ LS3
 '
 #sem model
-fit <- sem(model, data = wm, cluster = "PSU",sampling.weights="wmweight")
+fit <- sem(model, data = wm, cluster = "HH2",sampling.weights="wmweight")
 
 # summary measures
 summary(fit, standardized = TRUE, fit.measures=TRUE)
