@@ -60,12 +60,13 @@ sum_var(MA6)
 model <- '
   #measurement model
     awareness =~ FN1A + FN1B + FN1C + FN1D + FN1E + FN1F + FN1G + FN1H + FN1I + FN1J + FN1K + FN1L
-    usage =~ FN2 + FN4A + FN4C + FN4D + FN4E + FN4F + FN4G + FN4H + FN4X + FN4NR + FN5
+    usage =~ FN2 + FN4A + FN4C + FN4D + FN4E + FN4F + FN4G + FN4H + FN4X + FN4NR + FN5 + insurance
     FI =~ awareness + usage
+    SEF =~ welevel + zone + WAGE + HH6 + MSTATUS
     SW =~ LS1 + LS2 + LS3 + LS4
 '
 # cfa model
-fit <- sem(model, data = wm, cluster = "HH1",sampling.weights="wmweight")
+fit <- cfa(model, data = wm,sampling.weights="wmweight", ordered=T)
 
 # check for modification indices, factor loadings less than 0.5 are dropped
 modindices(fit, sort = TRUE, maximum.number = 5)
@@ -77,37 +78,31 @@ summary(fit, standardized = TRUE, fit.measures=TRUE)
 
 # SEM
 ```{r}
-# Structural Equation Model
+# Structural Equation Modelling
 model <- '
-  #measurement model
-    awareness =~ FN1B + FN1D + FN1E + FN1G + FN1H + FN1I
-    usage =~ FN2 + FN4H + welevel
-    FI =~ awareness + usage + FN1A
-    SW =~ LS1 + LS3
-  #regressions
-    FI ~ welevel + WB4
-    HH6 ~ welevel + FI + zone
-    SW ~ FI
-  #residual correlations
-    FN1H ~~ FN1I
-    FN1A ~~ FN1B
-    LS1 ~~ LS3
+  # measurement model
+    awareness =~ FN1A + FN1B + FN1C + FN1D + FN1E + FN1F + FN1G + FN1H + FN1I + FN1J + FN1K + FN1L
+    usage =~ FN2 + FN4C + FN4D + FN4E + FN4NR + insurance
+    FI =~ awareness + usage
+    SW =~ LS1 + LS3 + LS4
+  # regression
+    SW ~ c*FI
 '
-#sem model
-fit <- sem(model, data = wm, cluster = "HH2",sampling.weights="wmweight")
+# sem model
+fit <- sem(model, data = wm,sampling.weights="wmweight", ordered=T)
 
-# summary measures
+
+#summary measures
 summary(fit, standardized = TRUE, fit.measures=TRUE)
-
-
-#fitMeasures(fit, c("cfi","rmsea","srmr"))
-
 ```
 
-## SEM Plot
+
+
+
+# SEM Plot
 ```{r}
 # plot the SEM diagram
-lavaanPlot(model = fit, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = T)
+lavaanPlot(model = fit, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "black"), coefs = T)
 
 ```
 
