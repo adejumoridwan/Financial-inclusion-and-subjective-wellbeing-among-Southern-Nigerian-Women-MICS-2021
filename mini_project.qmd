@@ -44,58 +44,63 @@ sum_var <- function(g){
     select({{g}}, proportion, total)
 }
 
+
 #summary statistics of socio_demographic variables
 sum_var(zone)
 sum_var(welevel)
 sum_var(WAGE)
 sum_var(HH6)
-sum_var(MA6)
-
+sum_var(MSTATUS)
 ```
 
 
 # CFA
 ```{r}
 #confirmatory factor analysis
-model <- '
+model_cfa <- '
   #measurement model
     awareness =~ FN1A + FN1B + FN1C + FN1D + FN1E + FN1F + FN1G + FN1H + FN1I + FN1J + FN1K + FN1L
-    usage =~ FN2 + FN4A + FN4C + FN4D + FN4E + FN4F + FN4G + FN4H + FN4X + FN4NR + FN5 + insurance
+    usage =~ FN2 + FN4A + FN4B + FN4C + FN4D + FN4E + FN4F + FN4G + FN4H + FN4X + FN5 + insurance
     FI =~ awareness + usage
-    SEF =~ welevel + zone + WAGE + HH6 + MSTATUS
-    SW =~ LS1 + LS2 + LS3 + LS4
+    SWB =~ LS1 + LS2 + LS3 + LS4
 '
 # cfa model
-fit <- cfa(model, data = wm,sampling.weights="wmweight", ordered=T)
+fit_cfa <- cfa(model_cfa, data = wm,sampling.weights="wmweight", ordered=T)
 
 # check for modification indices, factor loadings less than 0.5 are dropped
-modindices(fit, sort = TRUE, maximum.number = 5)
+# modindices(fit, sort = TRUE, maximum.number = 5)
 
 #summary measures
-summary(fit, standardized = TRUE, fit.measures=TRUE)
+summary(fit_cfa, standardized = TRUE, fit.measures=TRUE)
 ```
 
 
 # SEM
 ```{r}
 # Structural Equation Modelling
-model <- '
+model_sem <- '
   # measurement model
     awareness =~ FN1A + FN1B + FN1C + FN1D + FN1E + FN1F + FN1G + FN1H + FN1I + FN1J + FN1K + FN1L
-    usage =~ FN2 + FN4C + FN4D + FN4E + FN4NR + insurance
+    usage =~ FN2 + FN4B + FN4C + FN4D + FN4E
     FI =~ awareness + usage
-    SW =~ LS1 + LS3 + LS4
+    SWB =~ LS1 + LS3 + LS4
   # regression
-    SW ~ c*FI
+    FI ~ welevel + HH6
+    SWB ~ FI + welevel + zone + MSTATUS + HH6 + WAGE
+  # residual correlations
 '
 # sem model
-fit <- sem(model, data = wm,sampling.weights="wmweight", ordered=T)
+fit_sem <- sem(model_sem, data = wm,sampling.weights="wmweight", ordered=T)
 
 
 #summary measures
-summary(fit, standardized = TRUE, fit.measures=TRUE)
+summary(fit_sem, standardized = TRUE, fit.measures=TRUE)
 ```
 
+
+```{r}
+modindices(fit_sem, sort = TRUE, maximum.number = 5)
+```
 
 
 
